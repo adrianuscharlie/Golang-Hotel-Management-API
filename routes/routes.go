@@ -25,6 +25,10 @@ func RegisterRoutes(router *gin.Engine, db *gorm.DB) {
 			roomApi.POST("/type", roomHandler.CreateRoomType) // POST /api/room/type
 			roomApi.GET("/", roomHandler.GetAllRoom)          // GET  /api/room
 			roomApi.GET("/:id", roomHandler.GetRoomByID)      // GET  /api/room/:id  <-- added
+			roomApi.GET("/available", roomHandler.GetAvailableRoom)
+			roomApi.PUT("/", roomHandler.UpdateRoom)
+			roomApi.PUT("/status", roomHandler.ChangeStatus)
+			roomApi.DELETE("/", roomHandler.DeleteRoom)
 		}
 
 		// You can add other groups here, like:

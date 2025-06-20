@@ -2,21 +2,21 @@ package services
 
 import (
 	"errors"
+	"fmt"
 	"hms-backend/model"
 	"hms-backend/repository"
 	"hms-backend/request"
 	"hms-backend/response"
-	"time"
 )
 
 type RoomServices interface {
 	GetAll() ([]response.RoomResponse, error)
 	GetByID(id int) (*response.RoomResponse, error)
 	Create(input *request.CreateRoomRequest) error
-	Update(input request.UpdateRoomRequest) error
-	Delete(id int) error
+	Update(input request.UpdateRoomRequest) (*model.Room, error)
+	Delete(roomNumber string) error
 	ChangeStatus(id int, status string) error
-	FindAvailable(checkIn, checkOut time.Time) ([]response.RoomResponse, error)
+	FindAvailable(params request.RoomFilterParams) ([]response.RoomResponse, error)
 	CreateRoomType(input *request.CreateRoomTypeRequest) error
 }
 
@@ -80,29 +80,42 @@ func (s *roomServices) Create(input *request.CreateRoomRequest) error {
 	return s.roomRepository.Create(&room)
 }
 
-func (s *roomServices) Update(update request.UpdateRoomRequest) error {
+func (s *roomServices) Update(update request.UpdateRoomRequest) (*model.Room, error) {
 	room, err := s.roomRepository.FindByID(update.ID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if room == nil {
-		return errors.New("room not found")
+		return nil, errors.New("room not found")
 	}
 	room.Number = update.Number
 	room.Status = update.Status
 	room.RoomTypeID = uint(update.RoomTypeID)
-	return s.roomRepository.Update(room)
+	room.RoomType = model.RoomType{}
+	err = s.roomRepository.Update(room)
+	if err != nil {
+		return nil, err
+	}
+	updatedRoom, err := s.roomRepository.FindByID(update.ID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch room after update: %w", err)
+	}
+	return updatedRoom, nil
 }
-func (s *roomServices) Delete(id int) error {
-	return s.roomRepository.Delete(id)
+func (s *roomServices) Delete(roomNumber string) error {
+	room, err := s.roomRepository.FindByNumber(roomNumber)
+	if err != nil {
+		return err
+	}
+	return s.roomRepository.Delete(int(room.ID))
 }
 
 func (s *roomServices) ChangeStatus(id int, status string) error {
 	return s.roomRepository.ChangeStatus(id, status)
 }
 
-func (s *roomServices) FindAvailable(checkIn, checkOut time.Time) ([]response.RoomResponse, error) {
-	rooms, err := s.roomRepository.FindAvailable(checkIn, checkOut)
+func (s *roomServices) FindAvailable(params request.RoomFilterParams) ([]response.RoomResponse, error) {
+	rooms, err := s.roomRepository.FindAvailable(params)
 	if err != nil {
 		return nil, err
 	}
