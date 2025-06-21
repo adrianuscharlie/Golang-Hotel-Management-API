@@ -39,15 +39,12 @@ func (h *RoomHandler) CreateRoom(c *gin.Context) {
 	}
 
 	// pass by pointer since service expects *CreateRoomRequest
-	if err := h.roomServices.Create(&req); err != nil {
+	room, err := h.roomServices.Create(&req)
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, response.Response{"500", "Failed to create room: " + err.Error(), nil})
 		return
 	}
-
-	c.JSON(http.StatusCreated, gin.H{
-		"responseCode":    "00",
-		"responseMessage": "Room successfully created",
-	})
+	c.JSON(http.StatusCreated, response.Response{"00", "Successful creating new room", room})
 }
 
 // POST /rooms/type
@@ -62,12 +59,7 @@ func (h *RoomHandler) CreateRoomType(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, response.Response{"500", err.Error(), nil})
 		return
 	}
-
-	c.JSON(http.StatusOK, response.Response{"00", "Successful", nil})
-	c.JSON(http.StatusCreated, gin.H{
-		"responseCode":    "00",
-		"responseMessage": "Success",
-	})
+	c.JSON(http.StatusCreated, response.Response{"00", "Successful", nil})
 }
 
 func (h *RoomHandler) GetRoomByID(c *gin.Context) {

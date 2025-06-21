@@ -12,7 +12,7 @@ import (
 type RoomServices interface {
 	GetAll() ([]response.RoomResponse, error)
 	GetByID(id int) (*response.RoomResponse, error)
-	Create(input *request.CreateRoomRequest) error
+	Create(input *request.CreateRoomRequest) (*model.Room, error)
 	Update(input request.UpdateRoomRequest) (*model.Room, error)
 	Delete(roomNumber string) error
 	ChangeStatus(id int, status string) error
@@ -71,13 +71,17 @@ func (s *roomServices) GetByID(id int) (*response.RoomResponse, error) {
 	return &response, err
 }
 
-func (s *roomServices) Create(input *request.CreateRoomRequest) error {
+func (s *roomServices) Create(input *request.CreateRoomRequest) (*model.Room, error) {
 	room := model.Room{
 		Status:     input.Status,
 		Number:     input.Number,
 		RoomTypeID: uint(input.RoomTypeID),
 	}
-	return s.roomRepository.Create(&room)
+	err := s.roomRepository.Create(&room)
+	if err != nil {
+		return nil, err
+	}
+	return &room, err
 }
 
 func (s *roomServices) Update(update request.UpdateRoomRequest) (*model.Room, error) {
