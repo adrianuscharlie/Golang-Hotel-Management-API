@@ -14,9 +14,14 @@ func RegisterRoutes(router *gin.Engine, db *gorm.DB) {
 	roomRepository := repository.NewRoomRepository(db)
 	roomServices := services.NewRoomServices(roomRepository)
 	roomHandler := handler.NewRoomHandler(roomServices)
+
 	guestRepository := repository.NewGuestRepository(db)
 	guestServices := services.NewGuestServices(guestRepository)
 	guestHandler := handler.NewGuestHandler(guestServices)
+
+	bookingRepository := repository.NewBookingRepository(db)
+	bookingServices := services.NewBookingServices(bookingRepository, roomServices, guestServices)
+	bookingHandler := handler.NewBookingHandler(bookingServices)
 	// Main API group
 	api := router.Group("/api")
 	{
@@ -39,6 +44,11 @@ func RegisterRoutes(router *gin.Engine, db *gorm.DB) {
 			guestApi.GET("/identity", guestHandler.GetGuestByCredentialID)
 			guestApi.PUT("/", guestHandler.Update)
 			guestApi.DELETE("/:id", guestHandler.Delete)
+		}
+
+		bookingApi := api.Group("/booking")
+		{
+			bookingApi.POST("/", bookingHandler.CreateBooking)
 		}
 
 		// You can add other groups here, like:

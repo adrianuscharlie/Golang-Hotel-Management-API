@@ -4,6 +4,8 @@ go 1.24.0
 
 require gorm.io/driver/mysql v1.6.0
 
+require github.com/oklog/ulid/v2 v2.1.1 // indirect
+
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/bytedance/sonic v1.11.6 // indirect

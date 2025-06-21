@@ -70,7 +70,7 @@ func (h *RoomHandler) GetRoomByID(c *gin.Context) {
 		return
 	}
 	// Use roomID to query from DB, for example
-	room, err := h.roomServices.GetByID(roomID)
+	room, err := h.roomServices.GetByID(uint(roomID))
 	if err != nil {
 		c.JSON(http.StatusNotFound, response.Response{"404", err.Error(), nil})
 		return
@@ -147,7 +147,7 @@ func (h *RoomHandler) ChangeStatus(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, response.Response{"400", err.Error(), nil})
 		return
 	}
-	err = h.roomServices.ChangeStatus(strId, req.Status)
+	err = h.roomServices.ChangeStatus(uint(strId), req.Status)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, response.Response{"500", err.Error(), nil})
 		return

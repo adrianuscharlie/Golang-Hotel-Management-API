@@ -9,10 +9,10 @@ type CreateRoomRequest struct {
 }
 
 type UpdateRoomRequest struct {
-	ID         int    `json:"id" binding:"required"`
+	ID         uint   `json:"id" binding:"required"`
 	Number     string `json:"number" binding:"required"`
 	Status     string `json:"status" binding:"required"`
-	RoomTypeID int    `json:"room_type_id" binding:"required"`
+	RoomTypeID uint   `json:"room_type_id" binding:"required"`
 }
 
 type ChangeRoomStatusRequest struct {
@@ -21,7 +21,7 @@ type ChangeRoomStatusRequest struct {
 
 type CreateRoomTypeRequest struct {
 	Price       float64 `json:"price"`
-	Capacity    int     `json:"capacity"`
+	Capacity    uint    `json:"capacity"`
 	Description string  `json:"description"`
 	Name        string  `json:"name"`
 }

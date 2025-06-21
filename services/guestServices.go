@@ -11,6 +11,8 @@ import (
 type GuestService interface {
 	Create(r *request.GuestRequest) (*response.GuestResponse, error)
 	FindByCredentialID(credType, credID string) (*response.GuestResponse, error)
+	FindByID(id uint) (*response.GuestResponse, error)
+	FindByModelID(id uint) (*model.Guest, error)
 	Update(r *request.GuestRequest) (*response.GuestResponse, error)
 	Delete(credType, credID string) error
 }
@@ -21,6 +23,24 @@ type guestService struct {
 
 func NewGuestServices(repo repository.GuestRepository) GuestService {
 	return &guestService{guestRepository: repo}
+}
+
+func (s *guestService) FindByModelID(id uint) (*model.Guest, error) {
+	return s.guestRepository.FindByID(id)
+}
+
+func (s *guestService) FindByID(id uint) (*response.GuestResponse, error) {
+	guest, err := s.guestRepository.FindByID(id)
+	if err != nil {
+		return nil, err
+	}
+	return &response.GuestResponse{
+		IDNumber:       guest.IDNumber,
+		CredentialType: guest.CredentialType,
+		FullName:       guest.FullName,
+		Email:          guest.Email,
+		Phone:          guest.Phone,
+	}, err
 }
 
 func (s *guestService) Create(r *request.GuestRequest) (*response.GuestResponse, error) {
@@ -36,14 +56,13 @@ func (s *guestService) Create(r *request.GuestRequest) (*response.GuestResponse,
 	if err != nil {
 		return nil, err
 	}
-	res := response.GuestResponse{
+	return &response.GuestResponse{
 		IDNumber:       guest.IDNumber,
 		CredentialType: guest.CredentialType,
 		FullName:       guest.FullName,
 		Email:          guest.Email,
 		Phone:          guest.Phone,
-	}
-	return &res, err
+	}, err
 }
 
 func (s *guestService) FindByCredentialID(credType, credID string) (*response.GuestResponse, error) {

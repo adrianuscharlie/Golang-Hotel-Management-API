@@ -8,6 +8,7 @@ import (
 
 type GuestRepository interface {
 	Create(m *model.Guest) error
+	FindByID(id uint) (*model.Guest, error)
 	FindByCredentialID(credType, credID string) (*model.Guest, error)
 	Update(m *model.Guest) error
 	Delete(credType, credID string) error
@@ -19,6 +20,12 @@ type guestRepository struct {
 
 func NewGuestRepository(db *gorm.DB) GuestRepository {
 	return &guestRepository{db}
+}
+
+func (r *guestRepository) FindByID(id uint) (*model.Guest, error) {
+	var guest model.Guest
+	err := r.db.Where("id = ? ", id).First(&guest)
+	return &guest, err.Error
 }
 
 func (r *guestRepository) Create(m *model.Guest) error {
