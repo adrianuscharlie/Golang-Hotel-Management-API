@@ -49,6 +49,11 @@ func RegisterRoutes(router *gin.Engine, db *gorm.DB) {
 		bookingApi := api.Group("/booking")
 		{
 			bookingApi.POST("/", bookingHandler.CreateBooking)
+			bookingApi.GET("/:id", bookingHandler.GetBookingByReference)
+			bookingApi.GET("/date", bookingHandler.GetBookingByDateRange)
+			bookingApi.POST("/cancel", bookingHandler.CancelBooking)
+			bookingApi.POST("/check_in", bookingHandler.CheckIn)
+			bookingApi.POST("/check_out", bookingHandler.Checkout)
 		}
 
 		// You can add other groups here, like:

@@ -34,13 +34,7 @@ func (s *guestService) FindByID(id uint) (*response.GuestResponse, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &response.GuestResponse{
-		IDNumber:       guest.IDNumber,
-		CredentialType: guest.CredentialType,
-		FullName:       guest.FullName,
-		Email:          guest.Email,
-		Phone:          guest.Phone,
-	}, err
+	return mapGuestResponse(guest), err
 }
 
 func (s *guestService) Create(r *request.GuestRequest) (*response.GuestResponse, error) {
@@ -52,17 +46,11 @@ func (s *guestService) Create(r *request.GuestRequest) (*response.GuestResponse,
 		Phone:          r.Phone,
 		CreatedAt:      time.Now(),
 	}
-	err := s.guestRepository.Create(&guest)
+	newGuest, err := s.guestRepository.Create(&guest)
 	if err != nil {
 		return nil, err
 	}
-	return &response.GuestResponse{
-		IDNumber:       guest.IDNumber,
-		CredentialType: guest.CredentialType,
-		FullName:       guest.FullName,
-		Email:          guest.Email,
-		Phone:          guest.Phone,
-	}, err
+	return mapGuestResponse(newGuest), err
 }
 
 func (s *guestService) FindByCredentialID(credType, credID string) (*response.GuestResponse, error) {
@@ -103,4 +91,15 @@ func (s *guestService) Update(r *request.GuestRequest) (*response.GuestResponse,
 
 func (s *guestService) Delete(credType, credID string) error {
 	return s.guestRepository.Delete(credType, credID)
+}
+
+func mapGuestResponse(g *model.Guest) *response.GuestResponse {
+	return &response.GuestResponse{
+		IDNumber:       g.IDNumber,
+		CredentialType: g.CredentialType,
+		FullName:       g.FullName,
+		Email:          g.Email,
+		Phone:          g.Phone,
+		ID:             g.ID,
+	}
 }

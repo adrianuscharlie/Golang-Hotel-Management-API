@@ -40,7 +40,7 @@ func (r *bookingRepository) FindByID(s string) (*model.Booking, error) {
 }
 func (r *bookingRepository) FindByReferenceID(s string) (*model.Booking, error) {
 	var booking model.Booking
-	err := r.db.Preload("Room").Preload("RoomType").Preload("Guest").Where("booking_reference = ?", s).First(&booking).Error
+	err := r.db.Preload("Room.RoomType").Preload("Guest").Where("booking_reference = ?", s).First(&booking).Error
 	if err != nil {
 		return nil, err
 	}
@@ -48,12 +48,12 @@ func (r *bookingRepository) FindByReferenceID(s string) (*model.Booking, error) 
 }
 func (r *bookingRepository) FindForDateRange(start, end time.Time) ([]*model.Booking, error) {
 	var bookings []*model.Booking
-	err := r.db.Preload("Room").Preload("RoomType").Preload("Guest").Where("check_in_date < ? AND check_out_date > ?", end, start).
+	err := r.db.Preload("Room.RoomType").Preload("Guest").Where("check_in_date < ? AND check_out_date > ?", end, start).
 		Find(&bookings).Error
 	return bookings, err
 }
 func (r *bookingRepository) FindByGuestID(guestID uint) ([]*model.Booking, error) {
 	var bookings []*model.Booking
-	err := r.db.Preload("Room").Preload("RoomType").Preload("Guest").Where("guest_id = ?", guestID).Find(&bookings).Error
+	err := r.db.Preload("Room.RoomType").Where("guest_id = ?", guestID).Find(&bookings).Error
 	return bookings, err
 }

@@ -12,24 +12,24 @@ type roomRepository struct {
 }
 
 type RoomRepository interface {
-	FindAll() ([]model.Room, error)
+	FindAll() ([]*model.Room, error)
 	FindByID(id uint) (*model.Room, error)
-	Create(room *model.Room) error
+	Create(room *model.Room) (*model.Room, error)
 	Update(room *model.Room) error
 	Delete(id uint) error
 	FindByNumber(number string) (*model.Room, error)
-	FindAvailable(params request.RoomFilterParams) ([]model.Room, error)
+	FindAvailable(params request.RoomFilterParams) ([]*model.Room, error)
 	ChangeStatus(id uint, status string) error
-	CreateRoomType(roomType *model.RoomType) error
+	CreateRoomType(roomType *model.RoomType) (*model.RoomType, error)
 }
 
 func NewRoomRepository(db *gorm.DB) RoomRepository {
 	return &roomRepository{db}
 }
 
-func (r *roomRepository) FindAll() ([]model.Room, error) {
-	var rooms []model.Room
-	err := r.db.Preload("RoomType").Find(&rooms).Error
+func (r *roomRepository) FindAll() ([]*model.Room, error) {
+	var rooms []*model.Room
+	err := r.db.Preload("Room.RoomType").Find(&rooms).Error
 	return rooms, err
 }
 
@@ -39,8 +39,12 @@ func (r *roomRepository) FindByID(id uint) (*model.Room, error) {
 	return &room, err
 }
 
-func (r *roomRepository) Create(m *model.Room) error {
-	return r.db.Create(m).Error
+func (r *roomRepository) Create(m *model.Room) (*model.Room, error) {
+	err := r.db.Create(m).Error
+	if err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 func (r *roomRepository) Update(m *model.Room) error {
@@ -53,15 +57,18 @@ func (r *roomRepository) Delete(id uint) error {
 
 func (r *roomRepository) FindByNumber(s string) (*model.Room, error) {
 	var room model.Room
-	err := r.db.Preload("RoomType").Where("number = ?", s).First(&room).Error
+	err := r.db.Preload("Room.RoomType").Where("number = ?", s).First(&room).Error
 	return &room, err
 }
 
-func (r *roomRepository) FindAvailable(params request.RoomFilterParams) ([]model.Room, error) {
-	var rooms []model.Room
-
+func (r *roomRepository) FindAvailable(params request.RoomFilterParams) ([]*model.Room, error) {
+	var rooms []*model.Room
+	blockingStatuses := []model.BookingStatus{
+		model.StatusPending,
+		model.StatusConfirmed,
+	}
 	// 1. Start query chain. Preload loads the RoomType data efficiently after the query is done.
-	query := r.db.Model(&model.Room{}).Preload("RoomType")
+	query := r.db.Model(&model.Room{}).Preload("Room.RoomType")
 
 	// 2. JOIN with room_types table to allow filtering on price and category name.
 	//    We use the actual table name `room_types` for clarity.
@@ -70,7 +77,7 @@ func (r *roomRepository) FindAvailable(params request.RoomFilterParams) ([]model
 	// 3. Create the subquery to find all IDs of rooms that are UNAVAILABLE.
 	//    This date logic correctly finds ALL overlapping bookings.
 	subquery := r.db.Table("bookings").Select("room_id").
-		Where("NOT (check_out_date <= ? OR check_in_date >= ?)", params.CheckIn, params.CheckOut)
+		Where("NOT (check_out_date <= ? OR check_in_date >= ?)", params.CheckIn, params.CheckOut).Where("status IN ?", blockingStatuses)
 
 	// 4. Filter out the unavailable rooms from the main query.
 	query = query.Where("rooms.id NOT IN (?)", subquery)
@@ -93,7 +100,7 @@ func (r *roomRepository) FindAvailable(params request.RoomFilterParams) ([]model
 		query = query.Where("room_types.price <= ?", params.MaxPrice)
 	}
 
-	query = query.Where("status = ?", model.RoomStatus("available"))
+	query = query.Where("status = ?", model.StatusAvailable)
 
 	// Execute the fully constructed query
 	err := query.Find(&rooms).Error
@@ -109,6 +116,10 @@ func (r *roomRepository) ChangeStatus(id uint, status string) error {
 	return r.db.Save(&room).Error
 }
 
-func (r *roomRepository) CreateRoomType(roomType *model.RoomType) error {
-	return r.db.Create(&roomType).Error
+func (r *roomRepository) CreateRoomType(roomType *model.RoomType) (*model.RoomType, error) {
+	err := r.db.Create(&roomType).Error
+	if err != nil {
+		return nil, err
+	}
+	return roomType, nil
 }

@@ -10,14 +10,14 @@ import (
 )
 
 type RoomServices interface {
-	GetAll() ([]response.RoomResponse, error)
+	GetAll() ([]*response.RoomResponse, error)
 	GetByID(id uint) (*response.RoomResponse, error)
-	Create(input *request.CreateRoomRequest) (*model.Room, error)
-	Update(input request.UpdateRoomRequest) (*model.Room, error)
+	Create(input *request.CreateRoomRequest) (*response.RoomResponse, error)
+	Update(input request.UpdateRoomRequest) (*response.RoomResponse, error)
 	Delete(roomNumber string) error
 	ChangeStatus(id uint, status string) error
-	FindAvailable(params request.RoomFilterParams) ([]response.RoomResponse, error)
-	CreateRoomType(input *request.CreateRoomTypeRequest) error
+	FindAvailable(params request.RoomFilterParams) ([]*response.RoomResponse, error)
+	CreateRoomType(input *request.CreateRoomTypeRequest) (*response.RoomTypeDetail, error)
 	GetRoomModelByID(id uint) (*model.Room, error)
 }
 
@@ -29,7 +29,7 @@ func NewRoomServices(roomRepo repository.RoomRepository) RoomServices {
 	return &roomServices{roomRepo}
 }
 
-func (s *roomServices) GetAll() ([]response.RoomResponse, error) {
+func (s *roomServices) GetAll() ([]*response.RoomResponse, error) {
 	rooms, err := s.roomRepository.FindAll()
 	if err != nil {
 		return nil, err
@@ -49,7 +49,7 @@ func (s *roomServices) GetRoomModelByID(id uint) (*model.Room, error) {
 	return s.roomRepository.FindByID(id)
 }
 
-func (s *roomServices) Create(input *request.CreateRoomRequest) (*model.Room, error) {
+func (s *roomServices) Create(input *request.CreateRoomRequest) (*response.RoomResponse, error) {
 	if !isValidRoomStatus(input.Status) {
 		return nil, errors.New("invalid room status provided. must be 'available' or 'maintenance'")
 	}
@@ -58,14 +58,14 @@ func (s *roomServices) Create(input *request.CreateRoomRequest) (*model.Room, er
 		Number:     input.Number,
 		RoomTypeID: uint(input.RoomTypeID),
 	}
-	err := s.roomRepository.Create(&room)
+	createdRoom, err := s.roomRepository.Create(&room)
 	if err != nil {
 		return nil, err
 	}
-	return &room, err
+	return mapToRoomResponse(createdRoom), err
 }
 
-func (s *roomServices) Update(update request.UpdateRoomRequest) (*model.Room, error) {
+func (s *roomServices) Update(update request.UpdateRoomRequest) (*response.RoomResponse, error) {
 	room, err := s.roomRepository.FindByID(update.ID)
 	if err != nil {
 		return nil, err
@@ -88,7 +88,7 @@ func (s *roomServices) Update(update request.UpdateRoomRequest) (*model.Room, er
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch room after update: %w", err)
 	}
-	return updatedRoom, nil
+	return mapToRoomResponse(updatedRoom), nil
 }
 func (s *roomServices) Delete(roomNumber string) error {
 	room, err := s.roomRepository.FindByNumber(roomNumber)
@@ -105,7 +105,7 @@ func (s *roomServices) ChangeStatus(id uint, status string) error {
 	return s.roomRepository.ChangeStatus(id, status)
 }
 
-func (s *roomServices) FindAvailable(params request.RoomFilterParams) ([]response.RoomResponse, error) {
+func (s *roomServices) FindAvailable(params request.RoomFilterParams) ([]*response.RoomResponse, error) {
 	rooms, err := s.roomRepository.FindAvailable(params)
 	if err != nil {
 		return nil, err
@@ -114,14 +114,18 @@ func (s *roomServices) FindAvailable(params request.RoomFilterParams) ([]respons
 	return mapToRoomResponseSlice(rooms), nil
 }
 
-func (s *roomServices) CreateRoomType(input *request.CreateRoomTypeRequest) error {
+func (s *roomServices) CreateRoomType(input *request.CreateRoomTypeRequest) (*response.RoomTypeDetail, error) {
 	roomType := model.RoomType{
 		Price:       input.Price,
 		Capacity:    input.Capacity,
 		Description: input.Description,
 		Name:        input.Name,
 	}
-	return s.roomRepository.CreateRoomType(&roomType)
+	createdRoomType, err := s.roomRepository.CreateRoomType(&roomType)
+	if err != nil {
+		return nil, err
+	}
+	return mapToRoomTypeResponse(createdRoomType), nil
 }
 
 func isValidRoomStatus(status string) bool {
@@ -157,11 +161,21 @@ func mapToRoomResponse(room *model.Room) *response.RoomResponse {
 	return resp
 }
 
-func mapToRoomResponseSlice(rooms []model.Room) []response.RoomResponse {
-	roomResponses := make([]response.RoomResponse, len(rooms))
+func mapToRoomTypeResponse(room *model.RoomType) *response.RoomTypeDetail {
+	return &response.RoomTypeDetail{
+		ID:          room.ID,
+		Name:        room.Name,
+		Description: room.Description,
+		Price:       room.Price,
+		Capacity:    room.Capacity,
+	}
+}
+
+func mapToRoomResponseSlice(rooms []*model.Room) []*response.RoomResponse {
+	roomResponses := make([]*response.RoomResponse, len(rooms))
 	for i, room := range rooms {
 		// Since mapToRoomResponse returns a pointer, we dereference it here.
-		roomResponses[i] = *mapToRoomResponse(&room)
+		roomResponses[i] = mapToRoomResponse(room)
 	}
 	return roomResponses
 }

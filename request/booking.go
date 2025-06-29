@@ -8,5 +8,11 @@ type CreateBookingRequest struct {
 	Notes        string `json:"notes"`
 }
 
-type UpdateBookingRequest struct {
+type CancelBookingRequest struct {
+	BookingReference string `json:"booking_id" binding:"required"`
+	Reason           string `json:"reason" binding:"required"`
+}
+
+type CheckInCheckoutRequest struct {
+	BookingReference string `json:"booking_id" binding:"required"`
 }

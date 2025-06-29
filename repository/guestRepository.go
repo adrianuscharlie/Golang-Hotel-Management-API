@@ -7,7 +7,7 @@ import (
 )
 
 type GuestRepository interface {
-	Create(m *model.Guest) error
+	Create(m *model.Guest) (*model.Guest, error)
 	FindByID(id uint) (*model.Guest, error)
 	FindByCredentialID(credType, credID string) (*model.Guest, error)
 	Update(m *model.Guest) error
@@ -28,8 +28,12 @@ func (r *guestRepository) FindByID(id uint) (*model.Guest, error) {
 	return &guest, err.Error
 }
 
-func (r *guestRepository) Create(m *model.Guest) error {
-	return r.db.Create(&m).Error
+func (r *guestRepository) Create(m *model.Guest) (*model.Guest, error) {
+	err := r.db.Create(m).Error
+	if err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 func (r *guestRepository) FindByCredentialID(credType, credID string) (*model.Guest, error) {

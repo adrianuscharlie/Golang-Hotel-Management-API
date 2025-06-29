@@ -54,12 +54,12 @@ func (h *RoomHandler) CreateRoomType(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, response.Response{"400", err.Error(), nil})
 		return
 	}
-	err := h.roomServices.CreateRoomType(&req)
+	room, err := h.roomServices.CreateRoomType(&req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, response.Response{"500", err.Error(), nil})
 		return
 	}
-	c.JSON(http.StatusCreated, response.Response{"00", "Successful", nil})
+	c.JSON(http.StatusCreated, response.Response{"00", "Successful", room})
 }
 
 func (h *RoomHandler) GetRoomByID(c *gin.Context) {

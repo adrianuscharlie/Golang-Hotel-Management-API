@@ -6,4 +6,5 @@ type GuestResponse struct {
 	FullName       string `json:"full_name" binding:"required"`
 	Phone          string `json:"phone_number" binding:"required"`
 	Email          string `json:"email"`
+	ID             uint   `json:"id" binding :"required"`
 }
